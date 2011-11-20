@@ -101,6 +101,7 @@ public class GTPreCompiler {
     static Pattern alwaysPimpGroovyP = Pattern.compile("^\\s*\\*\\{\\s*alwaysPimpGroovy\\s*\\}\\*\\s*$");
 
     public Output compile(final String src, final GTTemplateLocation templateLocation) {
+
         String[] lines = src.split("\\n");
 
         return internalCompile(lines, templateLocation);
@@ -578,7 +579,12 @@ public class GTPreCompiler {
         // must advance sc-offset
         sc.lineOffset = endOfLastLine;
 
-        return sb.toString();
+        String s = sb.toString();
+        if ( s.endsWith("\r")) { // must prevent newline-leakage on windows
+            return s.substring(0, s.length()-1);
+        } else {
+            return s;
+        }
     }
 
     protected GTFragment processTag( SourceContext sc, String tagName, String tagArgString, boolean tagWithoutBody) {

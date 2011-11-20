@@ -1,6 +1,6 @@
 name := "gt-engine"
 
-version := "0.1"
+version := "0.1.1"
 
 libraryDependencies ++= Seq(
 	"org.codehaus.groovy" % "groovy" % "1.8.4",
