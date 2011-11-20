@@ -1,4 +1,4 @@
-name := "play-groovy-template-engine"
+name := "gt-engine"
 
 version := "0.1"
 
