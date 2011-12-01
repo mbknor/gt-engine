@@ -24,7 +24,7 @@ public class GTTemplateRepo {
 
 
     private Map<String, TemplateInfo> loadedTemplates = new ConcurrentHashMap<String, TemplateInfo>();
-    private Map<String, TemplateInfo> classname2TemplateInfo = new ConcurrentHashMap<String, TemplateInfo>();
+    protected Map<String, TemplateInfo> classname2TemplateInfo = new ConcurrentHashMap<String, TemplateInfo>();
 
 
     public static class TemplateInfo {
@@ -313,123 +313,9 @@ public class GTTemplateRepo {
         return ti;
     }
 
-    // converts stacktrace-elements referring to generated template code into pointin to the correct template-file and line
     public GTRuntimeException fixException(Throwable e) {
-        TemplateInfo prevTi = null;
-        TemplateInfo errorTI = null;
-        int errorLine = 0;
-
-        StackTraceElement[] seList = e.getStackTrace();
-
-        if ( e instanceof GTTemplateRuntimeException) {
-            // we must skip all stack-trace-elements in front until we find one with a generated classname
-            int i=0;
-            while ( i < seList.length) {
-                String clazz = seList[i].getClassName();
-                if ( clazz.startsWith(GTPreCompiler.generatedPackageName)) {
-                    // This is a generated class
-                    // This is our new start index
-                    StackTraceElement[] l = new StackTraceElement[seList.length-i];
-                    for ( int n = i; n< seList.length; n++) {
-                        l[n-i] = seList[n];
-                    }
-                    seList = l;
-
-                    break;
-                }
-                i++;
-            }
-
-            // unwrap this exception
-            if ( e.getCause() != null) {
-                e = e.getCause();
-            }
-        }
-
-        List<StackTraceElement> newSElist = new ArrayList<StackTraceElement>();
-        for ( StackTraceElement se : seList) {
-            StackTraceElement orgSe = se;
-            String clazz = se.getClassName();
-            int lineNo=0;
-
-            TemplateInfo ti = null;
-
-            if ( clazz.startsWith(GTPreCompiler.generatedPackageName)) {
-                // This is a generated template class
-
-                int i = clazz.indexOf("$");
-                if ( i > 0 ) {
-                    clazz = clazz.substring(0, i);
-                }
-
-                boolean groovy = false;
-                if ( clazz.endsWith("G")) {
-                    // groovy class
-                    groovy = true;
-                    // Remove the last G in classname
-                    clazz = clazz.substring(0,clazz.length()-1);
-                }
-
-                ti = classname2TemplateInfo.get(clazz);
-
-                if (se.getMethodName().equals("_renderTemplate")) {
-                    se = null;
-                } else if (ti != null) {
-
-                    if ( ti == prevTi ) {
-                        // same template again - skip it
-                        se = null;
-                    } else {
-                        prevTi = ti;
-
-                        if ( groovy) {
-                            lineNo = ti.getGroovyLineMapper().translateLineNo(se.getLineNumber());
-                        } else {
-                            // java
-                            lineNo = ti.getJavaLineMapper().translateLineNo(se.getLineNumber());
-                        }
-                        se = new StackTraceElement(ti.templateLocation.relativePath, "", "line", lineNo);
-                    }
-                } else {
-                    // just leave it as is
-                }
-            } else {
-                // remove if groovy or reflection code
-                if (clazz.startsWith("org.codehaus.groovy.") || clazz.startsWith("groovy.") || clazz.startsWith("sun.reflect.") || clazz.startsWith("java.lang.reflect.")) {
-                    // remove it
-                    se = null;
-                }
-            }
-
-            if ( se != null) {
-                if ( newSElist.isEmpty() && se != orgSe) {
-                    // The topmost error is in a template
-                    errorTI = ti;
-                    errorLine = lineNo;
-                }
-                newSElist.add(se);
-            }
-
-        }
-
-        StackTraceElement[] newStackTranceArray = newSElist.toArray(new StackTraceElement[]{});
-
-        if ( errorTI != null) {
-            // The top-most error is a template error and we have the source.
-            // generate GTRuntimeExceptionWithSourceInfo
-            GTRuntimeExceptionWithSourceInfo newE = new GTRuntimeExceptionWithSourceInfo(e.getMessage(), e, errorTI.templateLocation, errorLine);
-            newE.setStackTrace( newStackTranceArray);
-            // also update the stacktrace of the cause-exception
-            e.setStackTrace( newStackTranceArray);
-            return newE;
-        } else {
-            // The topmost error is not inside a template - wrap it in GTRuntimeException
-            GTRuntimeException newE = new GTRuntimeException(e.getMessage(), e);
-            newE.setStackTrace(newStackTranceArray);
-            // also update the stacktrace of the cause-exception
-            e.setStackTrace( newStackTranceArray);
-            return newE;
-        }
+        return new GTExceptionFixer(this).fixException(e);
     }
+
 
 }

@@ -2,7 +2,7 @@ package play.template2.exceptions;
 
 public class GTRuntimeException extends GTException {
 
-    public GTRuntimeException() {
+    protected GTRuntimeException() {
     }
 
     public GTRuntimeException(String s) {

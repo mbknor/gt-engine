@@ -134,11 +134,6 @@ public abstract class GTJavaBase extends GTRenderingResult {
                 extendedTemplate.internalRenderTemplate( orgArgs, false );
             }
 
-        } catch( GTTemplateNotFoundWithSourceInfo e) {
-            throw e;
-        } catch ( GTRuntimeException e) {
-            // just throw it
-            throw e;
         } catch ( GTCompilationException e) {
             // just throw it
             throw e;

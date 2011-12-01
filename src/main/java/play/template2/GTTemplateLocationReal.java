@@ -15,4 +15,11 @@ public class GTTemplateLocationReal extends GTTemplateLocation {
     public String readSource() {
         return IO.readContentAsString(realFile);
     }
+
+    @Override
+    public String toString() {
+        return "GTTemplateLocationReal{" +
+                "realFile=" + realFile +
+                "} " + super.toString();
+    }
 }

@@ -1,6 +1,10 @@
 name := "gt-engine"
 
+organization := "com_kjetland"
+
 version := "0.1.1"
+
+javacOptions += "-g"
 
 libraryDependencies ++= Seq(
 	"org.codehaus.groovy" % "groovy" % "1.8.4",

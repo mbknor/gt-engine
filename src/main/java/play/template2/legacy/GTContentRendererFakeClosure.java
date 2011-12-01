@@ -9,7 +9,7 @@ import play.template2.GTRenderingResult;
 
 import java.io.PrintWriter;
 
-public class GTContentRendererFakeClosure extends Closure {
+public class GTContentRendererFakeClosure extends Closure<Object> {
 
     public final GTContentRenderer contentRenderer;
     private final GTJavaBase template;

@@ -16,4 +16,10 @@ public class GTTemplateLocation {
         return IO.readContentAsString(tl.realFile);
     }
 
+    @Override
+    public String toString() {
+        return "GTTemplateLocation{" +
+                "relativePath='" + relativePath + '\'' +
+                '}';
+    }
 }

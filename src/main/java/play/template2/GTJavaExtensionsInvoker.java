@@ -2,9 +2,12 @@ package play.template2;
 
 import groovy.lang.GroovyObjectSupport;
 import org.apache.commons.lang.reflect.MethodUtils;
+import play.template2.exceptions.GTException;
+import play.template2.exceptions.GTRuntimeExceptionForwarder;
 import play.template2.exceptions.GTTemplateRuntimeException;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -298,8 +301,12 @@ public abstract class GTJavaExtensionsInvoker {
                 throw new NoSuchMethodException(methodName);
             }
 
-        } catch (Exception e) {
-            throw new GTTemplateRuntimeException(e);
+        } catch (Throwable e) {
+            if ( e instanceof InvocationTargetException) {
+                // must unwrap it..
+                e = e.getCause();
+            }
+            throw new GTRuntimeExceptionForwarder(e);
         }
     }
 }

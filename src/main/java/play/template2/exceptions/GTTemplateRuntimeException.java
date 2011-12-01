@@ -15,11 +15,4 @@ public class GTTemplateRuntimeException extends GTException {
         super(s);
     }
 
-    public GTTemplateRuntimeException(String s, Throwable throwable) {
-        super(s, throwable);
-    }
-
-    public GTTemplateRuntimeException(Throwable throwable) {
-        super(throwable);
-    }
 }
