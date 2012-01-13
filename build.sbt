@@ -1,13 +1,13 @@
 name := "gt-engine"
 
-organization := "com_kjetland"
+organization := "kjetland"
 
-version := "0.1.1"
+version := "0.1.4"
 
 javacOptions += "-g"
 
 libraryDependencies ++= Seq(
-	"org.codehaus.groovy" % "groovy" % "1.8.4",
+	"org.codehaus.groovy" % "groovy" % "1.8.5",
 	"commons-collections" % "commons-collections" % "3.2.1",
 	"commons-lang" % "commons-lang" % "2.6",
 	"org.easytesting" % "fest-assert" % "1.4" % "test",
