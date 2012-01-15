@@ -5,6 +5,8 @@ import play.template2.compile.*;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 public class GTTemplateRepoBuilder {
     
@@ -82,8 +84,8 @@ public class GTTemplateRepoBuilder {
 
         private final boolean fakeWindowsNewLines;
 
-        private SpecialGTTemplateLocationReal(String relativePath, File realFile, boolean fakeWindowsNewLines) {
-            super(relativePath, realFile);
+        private SpecialGTTemplateLocationReal(String relativePath, URL realFileURL, boolean fakeWindowsNewLines) {
+            super(relativePath, realFileURL);
             this.fakeWindowsNewLines = fakeWindowsNewLines;
         }
 
@@ -114,7 +116,11 @@ public class GTTemplateRepoBuilder {
                 return null;
             }
 
-            return new SpecialGTTemplateLocationReal(queryPath, f, fakeWindowsNewLines);
+            try {
+                return new SpecialGTTemplateLocationReal(queryPath, f.toURI().toURL(), fakeWindowsNewLines);
+            } catch (MalformedURLException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         @Override

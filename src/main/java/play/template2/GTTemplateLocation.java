@@ -13,7 +13,7 @@ public class GTTemplateLocation {
 
     public String readSource() {
         GTTemplateLocationReal tl = GTFileResolver.impl.getTemplateLocationFromRelativePath(relativePath);
-        return IO.readContentAsString(tl.realFile);
+        return IO.readContentAsString(tl.realFileURL);
     }
 
     @Override

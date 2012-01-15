@@ -1,25 +1,25 @@
 package play.template2;
 
-import java.io.File;
+import java.net.URL;
 
 public class GTTemplateLocationReal extends GTTemplateLocation {
 
-    public final File realFile;
+    public final URL realFileURL;
 
-    public GTTemplateLocationReal(String relativePath, File realFile) {
+    public GTTemplateLocationReal(String relativePath, URL realFileURL) {
         super(relativePath);
-        this.realFile = realFile;
+        this.realFileURL = realFileURL;
     }
 
     @Override
     public String readSource() {
-        return IO.readContentAsString(realFile);
+        return IO.readContentAsString(realFileURL);
     }
 
     @Override
     public String toString() {
         return "GTTemplateLocationReal{" +
-                "realFile=" + realFile +
+                "realFile=" + realFileURL +
                 "} " + super.toString();
     }
 }

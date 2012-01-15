@@ -8,8 +8,6 @@ import play.template2.exceptions.*;
 
 import java.io.File;
 import java.io.FilenameFilter;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -39,9 +37,11 @@ public class GTTemplateRepo {
             if ( templateLocation instanceof GTTemplateLocationReal) {
                 GTTemplateLocationReal real = (GTTemplateLocationReal)templateLocation;
                 // store fileSize and time so we can detect changes.
-                File file = real.realFile;
-                fileSize = file.length();
-                fileDate = file.lastModified();
+                IO.FileInfo fileInfo = IO.getFileInfo(real.realFileURL);
+                
+                fileSize = fileInfo.size;
+                fileDate = fileInfo.lastModified;
+
             } else {
                 fileSize = 0;
                 fileDate = 0;
@@ -55,8 +55,11 @@ public class GTTemplateRepo {
                 // Cannot check for changes - does not have a file
                 return false;
             }
-
-            File freshFile = new File(((GTTemplateLocationReal)templateLocation).realFile.getAbsolutePath());
+            
+            File freshFile = IO.getFileFromURL(((GTTemplateLocationReal)templateLocation).realFileURL);
+            if ( freshFile == null) {
+                return false;
+            }
             if (!freshFile.exists() || !freshFile.isFile()) {
                 return true;
             }
@@ -164,11 +167,14 @@ public class GTTemplateRepo {
                     // new or modified - must compile it
 
                     if (templateLocation instanceof GTTemplateLocationReal) {
-                        File file = ((GTTemplateLocationReal)templateLocation).realFile;
 
-                        if ( !file.exists() || !file.isFile()) {
+                        try {
+                            // test if it works
+                            ((GTTemplateLocationReal)templateLocation).realFileURL.openStream().close();
+                        } catch (Exception e ) {
                             throw new GTTemplateNotFound( templateLocation.relativePath);
                         }
+
                     }
 
                     if ( !doCompile) {
@@ -236,9 +242,15 @@ public class GTTemplateRepo {
             file.delete();
             return null;
         }
+        
+        // need an actual file-object
+        File realFile = IO.getFileFromURL(templateLocationReal.realFileURL);
+        if ( realFile == null) {
+            return null;
+        }
 
         // check if class file and template-src have the same lastModified date
-        if ( templateLocationReal.realFile.lastModified() != file.lastModified()) {
+        if ( realFile.lastModified() != file.lastModified()) {
             // cached classes are old. cannot use them. delete it so we don't find it again
             file.delete();
             return null;
@@ -286,7 +298,7 @@ public class GTTemplateRepo {
             if (folderToDumpClassesIn != null && templateLocation instanceof GTTemplateLocationReal) {
                 // Must dump these classes in folder...
 
-                long templateLastModified = ((GTTemplateLocationReal)templateLocation).realFile.lastModified();
+                IO.FileInfo fileInfo = IO.getFileInfo(((GTTemplateLocationReal)templateLocation).realFileURL);
 
                 for ( GTJavaCompileToClass.CompiledClass compiledClass : compiledTemplate.compiledJavaClasses) {
                     String filename = compiledClass.classname.replace('.','/') + ".class";
@@ -294,7 +306,7 @@ public class GTTemplateRepo {
                     file.getParentFile().mkdirs();
                     IO.write( compiledClass.bytes, file);
                     // set lastModified date on file equal to the one from the template src - then we can check if cache is valid later..
-                    file.setLastModified(templateLastModified);
+                    file.setLastModified(fileInfo.lastModified);
                 }
 
             }
