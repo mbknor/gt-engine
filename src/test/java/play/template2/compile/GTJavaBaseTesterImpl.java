@@ -45,7 +45,7 @@ public abstract class GTJavaBaseTesterImpl extends GTJavaBase {
     }
 
     @Override
-    public String messagesGet(Object key, Object... args) {
+    protected String resolveMessage(Object key, Object[] args) {
         return null;
     }
 

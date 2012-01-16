@@ -140,7 +140,7 @@ public abstract class IO {
      * @return
      */
     public static File getFileFromURL(URL urlFile) {
-        if ( urlFile.getProtocol().equals("FILE")) {
+        if ( urlFile.getProtocol().equals("file")) {
             return new File(urlFile.getFile());
         } else {
             return null;

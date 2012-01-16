@@ -2,7 +2,7 @@ name := "gt-engine"
 
 organization := "kjetland"
 
-version := "0.1.5"
+version := "0.1.6"
 
 javacOptions += "-g"
 

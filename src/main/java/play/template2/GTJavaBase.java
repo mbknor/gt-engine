@@ -251,7 +251,16 @@ public abstract class GTJavaBase extends GTRenderingResult {
     // must be overridden by play framework
     public abstract boolean validationHasError(String key);
 
-    public abstract String messagesGet(Object key, Object... args);
+    // Needs this method to be backward compatible with Play 1,
+    // But it is very hard to override when subclassing in Scala,
+    // therfore it calls resolveMessage, which must be implemented.
+    public final String messagesGet(Object key, Object... args) {
+
+        return resolveMessage(key, args);
+    }
+
+    // Implement this method to do the actuall message-resolving
+    protected abstract String resolveMessage(Object key, Object[] args);
 
     public void clearElseFlag() {
         GTTagContext.parent().data.remove(executeNextElseKeyName);
