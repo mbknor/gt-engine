@@ -176,7 +176,7 @@ public class GTPreCompiler {
     }
 
     public static String generateTemplateClassname(String relativePath) {
-        return "GTTemplate_"+ fixStringForCode( relativePath.replaceAll("[\\{\\}/\\\\\\.:]", "_"), null );
+        return "GTTemplate_"+ fixStringForCode( relativePath.replaceAll("[\\{\\}/\\\\\\.:!]", "_"), null );
     }
 
     public static class GTFragment {
