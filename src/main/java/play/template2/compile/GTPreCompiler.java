@@ -60,6 +60,15 @@ public class GTPreCompiler {
         public void gprintln(String line, int lineNo) {
             _gout.append( line + "//lineNo:"+(lineNo+1)+"\n");
         }
+
+        @Override
+        public String toString() {
+            return "SourceContext{" +
+                    "lineOffset=" + lineOffset +
+                    ", currentLineNo=" + currentLineNo +
+                    ", templateLocation=" + templateLocation +
+                    '}';
+        }
     }
 
     public static class Output {
@@ -332,7 +341,7 @@ public class GTPreCompiler {
                         m = tagP.matcher( tagString );
 
                         if (!m.find()) {
-                            throw new GTCompilationException("Where supposed to find the #tag here..");
+                            throw new GTCompilationException("Where supposed to find the #tag here.. "+sc);
                         }
 
                         String tagBody = m.group(1);
@@ -350,7 +359,7 @@ public class GTPreCompiler {
 
                         m = tagBodyP.matcher(tagBody);
                         if (!m.find()) {
-                            throw new GTCompilationException("Not supposed to happen");
+                            throw new GTCompilationExceptionWithSourceInfo("closing tag has no tag-name", sc.templateLocation, tagExpressionEtcStartLine);
                         }
                         String tagName = m.group(1);
                         String tagArgString = m.group(2);
