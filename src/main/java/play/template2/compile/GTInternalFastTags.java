@@ -230,7 +230,7 @@ public class GTInternalFastTags extends GTFastTag {
 
     public static void tag_option(GTJavaBase template, Map<String, Object> args, GTContentRenderer _content ) {
         Object value = args.get("arg");
-        Object selectedValue = GTTagContext.parent("select").data.get("selected");
+        Object selectedValue = GTTagContext.singleton.parent("select").getData().get("selected");
         boolean selected = selectedValue != null && value != null && (selectedValue.toString()).equals(value.toString());
         template.out.append("<option value=\"" + (value == null ? "" : value) + "\" " + (selected ? "selected=\"selected\"" : "") + " " + serialize(args, "selected", "value") + ">");
         template.insertOutput( _content.render());

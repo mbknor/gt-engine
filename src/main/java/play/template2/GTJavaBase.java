@@ -100,7 +100,7 @@ public abstract class GTJavaBase extends GTRenderingResult {
 
         if ( startingNewRendering) {
             // start with fresh tag-stack
-            GTTagContext.init();
+            GTTagContext.singleton.init();
         }
 
         try {
@@ -147,11 +147,11 @@ public abstract class GTJavaBase extends GTRenderingResult {
     protected abstract void _renderTemplate();
 
     protected void enterTag( String tagName) {
-        GTTagContext.enterTag(tagName);
+        GTTagContext.singleton.enterTag(tagName);
     }
 
     protected void leaveTag( String tagName) {
-        GTTagContext.exitTag();
+        GTTagContext.singleton.exitTag();
     }
     
     /**
@@ -177,7 +177,7 @@ public abstract class GTJavaBase extends GTRenderingResult {
         Class rawDataClass = getRawDataClass();
         if (rawDataClass != null && rawDataClass.isAssignableFrom(o.getClass())) {
             return convertRawDataToString(o);
-        } else if (!templateLocation.relativePath.endsWith(".html") || GTTagContext.hasParentTag("verbatim")) {
+        } else if (!templateLocation.relativePath.endsWith(".html") || GTTagContext.singleton.hasParentTag("verbatim")) {
             if ( templateLocation.relativePath.endsWith(".xml")) {
                 return escapeXML(o.toString());
             } else if ( templateLocation.relativePath.endsWith(".csv")) {
@@ -263,15 +263,15 @@ public abstract class GTJavaBase extends GTRenderingResult {
     protected abstract String resolveMessage(Object key, Object[] args);
 
     public void clearElseFlag() {
-        GTTagContext.parent().data.remove(executeNextElseKeyName);
+        GTTagContext.singleton.parent().getData().remove(executeNextElseKeyName);
     }
 
     public void setElseFlag() {
-        GTTagContext.parent().data.put(executeNextElseKeyName, true);
+        GTTagContext.singleton.parent().getData().put(executeNextElseKeyName, true);
     }
 
     public boolean elseFlagIsSet() {
-        Boolean v = (Boolean)GTTagContext.parent().data.get(executeNextElseKeyName);
+        Boolean v = (Boolean)GTTagContext.singleton.parent().getData().get(executeNextElseKeyName);
         if ( v != null) {
             return v;
         } else {
