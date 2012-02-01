@@ -9,7 +9,9 @@ import play.template2.GTRenderingResult;
 
 import java.io.PrintWriter;
 
-public class GTContentRendererFakeClosure extends Closure<Object> {
+// Not specifying genereric type of Closure. This should be done when compiling against groovy 1.8.4, but then it fails
+// when using groovy 1.7.0 and OpenJDK Runtime Environment (IcedTea6 1.11pre) (6b23~pre11-0ubuntu1.11.10.1)
+public class GTContentRendererFakeClosure extends Closure {
 
     public final GTContentRenderer contentRenderer;
     private final GTJavaBase template;

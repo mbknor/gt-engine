@@ -41,14 +41,17 @@ object GTEngineBuild extends Build {
   object BuildSettings {
 
           val buildOrganization = "kjetland"
-          val buildVersion      = "0.1.7.3"
+          val buildVersion      = "0.1.7.4"
           val buildScalaVersion = "2.9.1"
           val buildSbtVersion   = "0.11.2"
 
           val buildSettings = Defaults.defaultSettings ++ Seq (
               organization   := buildOrganization,
               version        := buildVersion,
-              scalaVersion   := buildScalaVersion
+              scalaVersion   := buildScalaVersion,
+              // Must ignore generating scaladoc since it gives an error
+              // where I, with intention, left out specifying the generic type when extending Closure in GTContentRendererFakeClosure.
+              publishArtifact in packageDoc := false
           )
 
       }
