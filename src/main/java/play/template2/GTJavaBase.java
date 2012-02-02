@@ -86,6 +86,8 @@ public abstract class GTJavaBase extends GTRenderingResult {
         allOuts.clear();
         initNewOut();
 
+        GTContentRendererFakeClosure.initRendering();
+
         // clear extend-stuff
         extendsTemplateLocation = null;
         extendedTemplate = null;

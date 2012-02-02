@@ -8,10 +8,14 @@ import play.template2.GTJavaBase;
 import play.template2.GTRenderingResult;
 
 import java.io.PrintWriter;
+import java.util.HashSet;
+import java.util.Set;
 
 // Not specifying genereric type of Closure. This should be done when compiling against groovy 1.8.4, but then it fails
 // when using groovy 1.7.0 and OpenJDK Runtime Environment (IcedTea6 1.11pre) (6b23~pre11-0ubuntu1.11.10.1)
 public class GTContentRendererFakeClosure extends Closure {
+    
+    private static ThreadLocal<Set<PrintWriter>> currentSeenCustomOuts = new ThreadLocal<Set<PrintWriter>>();
 
     public final GTContentRenderer contentRenderer;
     private final GTJavaBase template;
@@ -20,6 +24,15 @@ public class GTContentRendererFakeClosure extends Closure {
         super(null, null);
         this.template = template;
         this.contentRenderer = contentRenderer;
+    }
+
+    public static void initRendering() {
+        // Must clear currentSeenCustomOuts for this thread
+        currentSeenCustomOuts.set( new HashSet<PrintWriter>());
+    }
+    
+    protected static Set<PrintWriter> getSeenCustomOuts() {
+        return currentSeenCustomOuts.get();
     }
 
     public String renderToString() {
@@ -38,6 +51,18 @@ public class GTContentRendererFakeClosure extends Closure {
         // run the content
 
         PrintWriter customOut = (PrintWriter)contentRenderer.getRuntimeProperty("out");
+        
+        Set<PrintWriter> seenBefore = getSeenCustomOuts();
+        
+        if ( customOut != null) {
+            // Must check if this is a new one (custom set for this rendering), or if we have seen it before - meaning we should ignore it
+            if ( seenBefore.contains(customOut)) {
+                // seen it before
+                customOut = null;
+            } else {
+                seenBefore.add(customOut);
+            }
+        }
 
         GTRenderingResult res = contentRenderer.render();
 
@@ -48,6 +73,11 @@ public class GTContentRendererFakeClosure extends Closure {
         } else {
             // inject all the generated output into the output for the template
             template.insertOutput( res );
+        }
+
+        if (customOut != null) {
+            // remove it from seen before list
+            seenBefore.remove(customOut);
         }
         return null;
     }
