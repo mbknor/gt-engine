@@ -92,13 +92,13 @@ public abstract class GTJavaBase extends GTRenderingResult {
         extendingTemplate = null;
 
 
-        internalRenderTemplate(args, true);
+        internalRenderTemplate(args, null);
     }
     
 
-    public void internalRenderTemplate(Map<String, Object> args, boolean startingNewRendering) throws GTTemplateNotFoundWithSourceInfo, GTRuntimeException{
+    public void internalRenderTemplate(Map<String, Object> args, GTJavaBase callingTemplate) throws GTTemplateNotFoundWithSourceInfo, GTRuntimeException{
 
-        if ( startingNewRendering) {
+        if ( callingTemplate == null ) {
             // start with fresh tag-stack
             GTTagContext.singleton.init();
         }
@@ -123,15 +123,23 @@ public abstract class GTJavaBase extends GTRenderingResult {
 
             // check if "we" have extended another template..
             if (extendsTemplateLocation != null) {
-                // yes, we've extended another template
-                // Get the template we are extending
-                extendedTemplate = templateRepo.getTemplateInstance( extendsTemplateLocation );
-
-                // tell it that "we" extended it..
-                extendedTemplate.extendingTemplate = this;
-
-                // ok, render it with original args..
-                extendedTemplate.internalRenderTemplate( orgArgs, false );
+                
+                if ( callingTemplate == null ) {
+                    // This is the out-most template using extends
+                    // yes, we've extended another template
+                    // Get the template we are extending
+                    extendedTemplate = templateRepo.getTemplateInstance( extendsTemplateLocation );
+    
+                    // tell it that "we" extended it..
+                    extendedTemplate.extendingTemplate = this;
+    
+                    // ok, render it with original args..
+                    extendedTemplate.internalRenderTemplate( orgArgs, this );
+                } else {
+                    // Extends have been specified somewhere when rendering this template/tag.
+                    // Must pass the extends-info up the chain
+                    callingTemplate.extendsTemplateLocation = this.extendsTemplateLocation;
+                }
             }
 
         } catch ( GTCompilationException e) {
@@ -239,7 +247,7 @@ public abstract class GTJavaBase extends GTRenderingResult {
         // Must also add all tag-args (the map) with original names as a new value named '_attrs'
         completeTagArgs.put("_attrs", tagArgs);
 
-        tagTemplate.internalRenderTemplate(completeTagArgs, false);
+        tagTemplate.internalRenderTemplate(completeTagArgs, this);
         //grab the output
         insertOutput( tagTemplate );
     }
