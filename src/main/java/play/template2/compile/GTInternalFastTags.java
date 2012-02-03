@@ -111,7 +111,7 @@ public class GTInternalFastTags extends GTFastTag {
         newArgs.putAll(template.binding.getVariables());
         newArgs.put("_isInclude", true);
 
-        newTemplate.internalRenderTemplate(newArgs, template);
+        newTemplate.internalRenderTemplate(newArgs, false, template);
         template.insertOutput( newTemplate );
     }
 
@@ -131,7 +131,7 @@ public class GTInternalFastTags extends GTFastTag {
         newArgs.putAll(args);
         newArgs.put("_isInclude", true);
 
-        newTemplate.internalRenderTemplate(newArgs, template);
+        newTemplate.internalRenderTemplate(newArgs, false, template);
         template.insertOutput( newTemplate );
     }
 

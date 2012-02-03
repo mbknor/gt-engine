@@ -94,13 +94,13 @@ public abstract class GTJavaBase extends GTRenderingResult {
         extendingTemplate = null;
 
 
-        internalRenderTemplate(args, null);
+        internalRenderTemplate(args, true, null);
     }
     
 
-    public void internalRenderTemplate(Map<String, Object> args, GTJavaBase callingTemplate) throws GTTemplateNotFoundWithSourceInfo, GTRuntimeException{
+    public void internalRenderTemplate(Map<String, Object> args, boolean startingNewRendering, GTJavaBase callingTemplate) throws GTTemplateNotFoundWithSourceInfo, GTRuntimeException{
 
-        if ( callingTemplate == null ) {
+        if ( startingNewRendering ) {
             // start with fresh tag-stack
             GTTagContext.singleton.init();
         }
@@ -136,7 +136,7 @@ public abstract class GTJavaBase extends GTRenderingResult {
                     extendedTemplate.extendingTemplate = this;
     
                     // ok, render it with original args..
-                    extendedTemplate.internalRenderTemplate( orgArgs, this );
+                    extendedTemplate.internalRenderTemplate( orgArgs, false, null );
                 } else {
                     // Extends have been specified somewhere when rendering this template/tag.
                     // Must pass the extends-info up the chain
@@ -249,7 +249,7 @@ public abstract class GTJavaBase extends GTRenderingResult {
         // Must also add all tag-args (the map) with original names as a new value named '_attrs'
         completeTagArgs.put("_attrs", tagArgs);
 
-        tagTemplate.internalRenderTemplate(completeTagArgs, this);
+        tagTemplate.internalRenderTemplate(completeTagArgs, false, this);
         //grab the output
         insertOutput( tagTemplate );
     }

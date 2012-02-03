@@ -28,13 +28,19 @@ public class ExtendsTest {
 
         Map<String,Object> args = new HashMap<String,Object>();
 
-        GTJavaBase t = tr.getTemplateInstance(new GTTemplateLocation("templateUsingExtends.txt"));
+        GTJavaBase t = tr.getTemplateInstance(new GTTemplateLocation("templateUsingExtendsAndTag.txt"));
         t.renderTemplate(args);
-        assertThat( t.getAsString() ).isEqualTo("maintemplateUsingExtends");
-        //assertThat( sr.renderSrc("#{tagUsingExtends/}template", args) ).isEqualTo("maintag1template");
-        //assertThat( sr.renderSrc("#{tagUsingTagUsingExtends/}template", args) ).isEqualTo("maintag1tagxtemplate");
-        //assertThat( sr.renderSrc("#{render 'templateUsingExtends.txt'/}template", args) ).isEqualTo("maintemplateUsingExtendstemplate");
-        //assertThat( sr.renderSrc("#{include 'templateUsingExtends.txt'/}template", args) ).isEqualTo("maintemplateUsingExtendstemplate");
+        assertThat( t.getAsString() ).isEqualTo("maintemplateUsingExtends2\n[from tag: x]");
+
+        // test nested extends
+        t = tr.getTemplateInstance(new GTTemplateLocation("templateUsingExtendsExtendsAndTag.txt"));
+        t.renderTemplate(args);
+        assertThat( t.getAsString() ).isEqualTo("maintemplateUsingExtendsxtemplateUsingExtends3\n[from tag: x]");
+
+        assertThat( sr.renderSrc("#{tagUsingExtends/}template", args) ).isEqualTo("maintag1template");
+        assertThat( sr.renderSrc("#{tagUsingTagUsingExtends/}template", args) ).isEqualTo("maintag1tagxtemplate");
+        assertThat( sr.renderSrc("#{render 'templateUsingExtends.txt'/}template", args) ).isEqualTo("maintemplateUsingExtendstemplate");
+        assertThat( sr.renderSrc("#{include 'templateUsingExtends.txt'/}template", args) ).isEqualTo("maintemplateUsingExtendstemplate");
 
 
 
