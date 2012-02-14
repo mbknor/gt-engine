@@ -21,8 +21,8 @@ public class GTGroovyBase extends Script {
         try {
             return super.getProperty(property);
         } catch (MissingPropertyException mpe) {
-            // Just return null if not found
-            return null;
+            // Just return null if not found - but check layoutData also..
+            return GTJavaBase.layoutData.get().get(property); // will return null if not found
         }
     }
 

@@ -19,31 +19,35 @@ public class GTInternalFastTags extends GTFastTag {
             throw new GTTemplateRuntimeException("Specify a variable name when using #{get/}");
         }
 
-        // we must get from the template that extended us.
-        if ( template.extendingTemplate == null) {
-            return ;
-        }
-
-
-        String value = (String)GTJavaBase.layoutData.get().get(key);
+        Object value = GTJavaBase.layoutData.get().get(key);
 
         if (value != null) {
-            template.out.append(value);
+            template.out.append(value.toString());
+        } else {
+            if ( content != null ) {
+                template.insertOutput( content.render() );
+            }
         }
 
     }
 
     public static void tag_set(GTJavaBase template, Map<String, Object> args, GTContentRenderer content ) {
         String key = null;
-        String value = null;
+        Object value = null;
         // Simple case : #{set title:'Yop' /}
 
         for ( String k : args.keySet()) {
             if ( !"arg".equals(k)) {
                 key = k;
                 Object v = args.get(key);
+                
+                if ( v instanceof String) {
+                    value = template.objectToString( v);
+                } else {
+                    value = v;
+                }
 
-                value = template.objectToString( v);
+
                 break;
             }
         }
