@@ -14,7 +14,8 @@ object GTEngineBuild extends Build {
                 publishTo := Some(Resolvers.mbknorRepository),
                 scalacOptions ++= Seq("-Xlint","-deprecation", "-unchecked","-encoding", "utf8"),
                 javacOptions ++= Seq("-encoding", "utf8", "-g"),
-                resolvers ++= Seq(DefaultMavenRepository, Resolvers.mbknorGithubRepo)
+                resolvers ++= Seq(DefaultMavenRepository, Resolvers.mbknorGithubRepo),
+                parallelExecution in Test := false
             )
         )
 
@@ -27,7 +28,7 @@ object GTEngineBuild extends Build {
   object Dependencies {
 
       val runtime = Seq(
-        "org.codehaus.groovy" % "groovy" % "1.8.5",
+        "org.codehaus.groovy" % "groovy" % "1.8.6",
         "kjetland" % "org_eclipse_jdt_core" % "3.8.0.v_C03",
         	"commons-collections" % "commons-collections" % "3.2.1",
         	"commons-lang" % "commons-lang" % "2.6",
@@ -41,7 +42,7 @@ object GTEngineBuild extends Build {
   object BuildSettings {
 
           val buildOrganization = "kjetland"
-          val buildVersion      = "0.1.7.8"
+          val buildVersion      = "0.1.7.9"
           val buildScalaVersion = "2.9.1"
           val buildSbtVersion   = "0.11.2"
 
