@@ -12,9 +12,15 @@ public class GTTemplateRepoBuilder {
     
     public File templateRootFolder = null;
     public boolean fakeWindowsNewLines = false;
+    public GTJavaExtensionMethodResolver gtJavaExtensionMethodResolver = null;
     
     public GTTemplateRepoBuilder withTemplateRootFolder( File folder) {
         this.templateRootFolder = folder;
+        return this;
+    }
+
+    public GTTemplateRepoBuilder withGTJavaExtensionMethodResolver(GTJavaExtensionMethodResolver gtJavaExtensionMethodResolver) {
+        this.gtJavaExtensionMethodResolver = gtJavaExtensionMethodResolver;
         return this;
     }
 
@@ -40,12 +46,6 @@ public class GTTemplateRepoBuilder {
 
 
     private GTTemplateRepo createTemplateRepo() {
-
-        GTGroovyPimpTransformer.gtJavaExtensionMethodResolver = new GTJavaExtensionMethodResolver() {
-            public Class findClassWithMethod(String methodName) {
-                return null;
-            }
-        };
 
         GTJavaCompileToClass.typeResolver = new GTTypeResolver() {
             public byte[] getTypeBytes(String name) {
@@ -136,6 +136,18 @@ public class GTTemplateRepoBuilder {
         } else {
             GTFileResolver.impl = new FolderResolver(templateRootFolder, fakeWindowsNewLines);
         }
+
+        if ( this.gtJavaExtensionMethodResolver != null ) {
+            GTGroovyPimpTransformer.gtJavaExtensionMethodResolver = this.gtJavaExtensionMethodResolver;
+        } else {
+            // default empty resolver
+            GTGroovyPimpTransformer.gtJavaExtensionMethodResolver = new GTJavaExtensionMethodResolver() {
+                public Class findClassWithMethod(String methodName) {
+                    return null;
+                }
+            };
+        }
+        
         return createTemplateRepo();
     }
 }

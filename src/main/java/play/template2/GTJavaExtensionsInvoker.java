@@ -1,7 +1,9 @@
 package play.template2;
 
 import groovy.lang.GroovyObjectSupport;
+import groovy.lang.MetaMethod;
 import org.apache.commons.lang.reflect.MethodUtils;
+import org.codehaus.groovy.runtime.InvokerHelper;
 import play.template2.exceptions.GTException;
 import play.template2.exceptions.GTRuntimeExceptionForwarder;
 import play.template2.exceptions.GTTemplateRuntimeException;
@@ -37,14 +39,43 @@ public abstract class GTJavaExtensionsInvoker {
             withRealArgsAsArrayAndObjectAsCollectionInvoker
     };
 
+    // Can be wrapping both java Method and groovy MetaMethod 
+    static interface WrappedMethod {
+        public Object invoke(Object o, Object[] args) throws Exception;
+    }
+    
+    static class WrappedJavaMethod implements WrappedMethod {
+        private final Method m;
 
+        WrappedJavaMethod(Method m) {
+            this.m = m;
+        }
+
+        @Override
+        public Object invoke(Object o, Object[] args) throws Exception {
+            return m.invoke(o, args);
+        }
+    }
+
+    static class WrappedGroovyMetaMethod implements WrappedMethod {
+        private final MetaMethod m;
+
+        WrappedGroovyMetaMethod(MetaMethod m) {
+            this.m = m;
+        }
+
+        @Override
+        public Object invoke(Object o, Object[] args) throws Exception {
+            return m.invoke(o, args);
+        }
+    }
 
     static interface Invoker {
 
         // generates args that should be used when invoking this kind
         public Object[] fixArgs(Object object, Object[] args);
         // finds a method on jeClass that matches this kind
-        public Method findMethod(Class jeClazz, String methodName, Object object, Object[] args);
+        public WrappedMethod findMethod(Class jeClazz, String methodName, Object object, Object[] args);
     }
 
 
@@ -62,7 +93,7 @@ public abstract class GTJavaExtensionsInvoker {
             return jeArgs;
         }
 
-        public Method findMethod(Class jeClazz, String methodName, Object object, Object[] args) {
+        public WrappedMethod findMethod(Class jeClazz, String methodName, Object object, Object[] args) {
             Class[] jeArgsTypes = new Class[args.length+1];
             jeArgsTypes[0] = object.getClass();
             for (int i=0; i < args.length; i++) {
@@ -73,7 +104,10 @@ public abstract class GTJavaExtensionsInvoker {
             }
 
             Method m = MethodUtils.getMatchingAccessibleMethod(jeClazz, methodName, jeArgsTypes);
-            return m;
+            if ( m == null) {
+                return null;
+            }
+            return new WrappedJavaMethod(m);
         }
     }
 
@@ -96,7 +130,7 @@ public abstract class GTJavaExtensionsInvoker {
             return baseInvoker.fixArgs(objectCollection, args);
         }
 
-        public Method findMethod(Class jeClazz, String methodName, Object object, Object[] args) {
+        public WrappedMethod findMethod(Class jeClazz, String methodName, Object object, Object[] args) {
             if ( !object.getClass().isArray()) {
                 return null;
             }
@@ -124,7 +158,7 @@ public abstract class GTJavaExtensionsInvoker {
             return baseInvoker.fixArgs(object, new Object[]{argsArray});
         }
 
-        public Method findMethod(Class jeClazz, String methodName, Object object, Object[] args) {
+        public WrappedMethod findMethod(Class jeClazz, String methodName, Object object, Object[] args) {
             if ( args.length == 0) {
                 return null;
             }
@@ -141,7 +175,7 @@ public abstract class GTJavaExtensionsInvoker {
             return args;
         }
 
-        public Method findMethod(Class jeClazz, String methodName, Object object, Object[] args) {
+        public WrappedMethod findMethod(Class jeClazz, String methodName, Object object, Object[] args) {
             Class[] argsTypes = new Class[args.length];
             for (int i=0; i < args.length; i++) {
                 Object arg = args[i];
@@ -149,30 +183,34 @@ public abstract class GTJavaExtensionsInvoker {
                     argsTypes[i] = arg.getClass();
                 }
             }
-            return MethodUtils.getMatchingAccessibleMethod(object.getClass(), methodName, argsTypes);
+            MetaMethod mm = InvokerHelper.getMetaClass(object).pickMethod(methodName, argsTypes);
+            if ( mm == null ) {
+                return null;
+            }
+            return new WrappedGroovyMetaMethod(mm);
         }
     }
 
     static interface InvokeExecutor {
-        public Object doIt( Method m, String methodName, Object object, Object[] args) throws Exception;
+        public Object doIt( WrappedMethod m, String methodName, Object object, Object[] args) throws Exception;
     }
 
 
     static class InvokerExecutorMethod implements InvokeExecutor {
-        public Object doIt(Method m, String methodName, Object object, Object[] args) throws Exception {
+        public Object doIt(WrappedMethod m, String methodName, Object object, Object[] args) throws Exception {
             return m.invoke(null, args);
         }
     }
 
     static class InvokerExecutorRealMethod implements InvokeExecutor {
-        public Object doIt(Method m, String methodName, Object object, Object[] args) throws Exception {
+        public Object doIt(WrappedMethod m, String methodName, Object object, Object[] args) throws Exception {
             return m.invoke(object, args);
         }
     }
 
     static class InvokeExecutorGroovySupport implements InvokeExecutor {
 
-        public Object doIt(Method m, String methodName, Object object, Object[] args) throws Exception {
+        public Object doIt(WrappedMethod m, String methodName, Object object, Object[] args) throws Exception {
             // This is a special groovy object - must special case
             GroovyObjectSupport gos = (GroovyObjectSupport)object;
             return gos.invokeMethod(methodName, args);
@@ -231,12 +269,12 @@ public abstract class GTJavaExtensionsInvoker {
     }
 
     static class InvocationInfo {
-        public final Method method;
+        public final WrappedMethod method;
         public final String methodName;
         public final InvokeExecutor invokeExecutor;
         public final Invoker invoker;
 
-        InvocationInfo(Method method, String methodName, InvokeExecutor invokeExecutor, Invoker invoker) {
+        InvocationInfo(WrappedMethod method, String methodName, InvokeExecutor invokeExecutor, Invoker invoker) {
             this.method = method;
             this.methodName = methodName;
             this.invokeExecutor = invokeExecutor;
@@ -268,7 +306,7 @@ public abstract class GTJavaExtensionsInvoker {
 
             // first we look for method with regular args..
             Invoker invoker = null;
-            Method m = null;
+            WrappedMethod m = null;
             InvokeExecutor invokerExecutor = null;
             for ( Invoker _invoker : invokers) {
                 m = _invoker.findMethod(jeClazz, methodName, object, args);
