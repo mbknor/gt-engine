@@ -67,15 +67,20 @@ public class GTExceptionFixer {
                         // same template again - skip it
                         se = null;
                     } else {
-                        prevTi = ti;
-
-                        if ( groovy) {
-                            lineNo = ti.getGroovyLineMapper().translateLineNo(se.getLineNumber());
+                        if (se.getLineNumber() <= 0) {
+                            // Must skip StackTranceElements without valid lineNo - prevent us from ending up with script line 1
+                            se = null;
                         } else {
-                            // java
-                            lineNo = ti.getJavaLineMapper().translateLineNo(se.getLineNumber());
+                            prevTi = ti;
+    
+                            if ( groovy) {
+                                lineNo = ti.getGroovyLineMapper().translateLineNo(se.getLineNumber());
+                            } else {
+                                // java
+                                lineNo = ti.getJavaLineMapper().translateLineNo(se.getLineNumber());
+                            }
+                            se = new StackTraceElement(ti.templateLocation.relativePath, "", "line", lineNo);
                         }
-                        se = new StackTraceElement(ti.templateLocation.relativePath, "", "line", lineNo);
                     }
                 } else {
                     // just leave it as is
@@ -89,8 +94,8 @@ public class GTExceptionFixer {
             }
 
             if ( se != null) {
-                if ( newSElist.isEmpty() && se != orgSe) {
-                    // The topmost error is in a template
+                if ( errorTI == null && ti != null && se != orgSe) {
+                    // Found the first location in the stacktrace that where inside a template
                     errorTI = ti;
                     errorLine = lineNo;
                 }
