@@ -69,6 +69,11 @@ public class GTTemplateRepoBuilder {
                     throw new RuntimeException(e);
                 }
             }
+
+            @Override
+            public boolean isApplicationClass(String className) {
+                return false;
+            }
         };
 
         final GTPreCompilerFactoryImpl preCompilerFactory = new GTPreCompilerFactoryImpl();

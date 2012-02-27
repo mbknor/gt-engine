@@ -1,5 +1,6 @@
 package play.template2;
 
+import play.template2.compile.GTJavaCompileToClass;
 import play.template2.compile.GTPreCompiler;
 import play.template2.exceptions.*;
 
@@ -18,11 +19,13 @@ public class GTExceptionFixer {
 
     protected static class FixedStackTrace {
         public final GTTemplateRepo.TemplateInfo errorTI;
+        public final String errorInAppClassName;
         public final int errorLine;
         public final StackTraceElement[] stackTraceElements;
 
-        public FixedStackTrace(GTTemplateRepo.TemplateInfo errorTI, int errorLine, StackTraceElement[] stackTraceElements) {
+        public FixedStackTrace(GTTemplateRepo.TemplateInfo errorTI, String errorInAppClassName, int errorLine, StackTraceElement[] stackTraceElements) {
             this.errorTI = errorTI;
+            this.errorInAppClassName = errorInAppClassName;
             this.errorLine = errorLine;
             this.stackTraceElements = stackTraceElements;
         }
@@ -31,11 +34,14 @@ public class GTExceptionFixer {
     protected FixedStackTrace fixStackTrace(StackTraceElement[] seList) {
         GTTemplateRepo.TemplateInfo prevTi = null;
         GTTemplateRepo.TemplateInfo errorTI = null;
+        String errorInAppClassName = null;
+        boolean haveFoundErrorLocation = false;
         int errorLine = 0;
-        
+
         List<StackTraceElement> newSElist = new ArrayList<StackTraceElement>();
         for ( StackTraceElement se : seList) {
             StackTraceElement orgSe = se;
+            String appClassName = null;
             String clazz = se.getClassName();
             int lineNo=0;
 
@@ -90,14 +96,30 @@ public class GTExceptionFixer {
                 if (clazz.startsWith("org.codehaus.groovy.") || clazz.startsWith("groovy.") || clazz.startsWith("sun.reflect.") || clazz.startsWith("java.lang.reflect.")) {
                     // remove it
                     se = null;
+                } else if (se.getLineNumber() > 0 && GTJavaCompileToClass.typeResolver.isApplicationClass(clazz)) {
+                    // This is an applicationClass
+                    appClassName = se.getClassName();
+                    lineNo = se.getLineNumber();
                 }
             }
 
             if ( se != null) {
-                if ( errorTI == null && ti != null && se != orgSe) {
-                    // Found the first location in the stacktrace that where inside a template
-                    errorTI = ti;
-                    errorLine = lineNo;
+                if ( !haveFoundErrorLocation ) {
+                    if ( appClassName == null ) {
+                        // Only store template src location if we not already have seen appClass
+                        if ( errorTI == null && ti != null && se != orgSe) {
+                            // Found the first location in the stacktrace that where inside a template
+                            errorTI = ti;
+                            errorLine = lineNo;
+                            haveFoundErrorLocation = true;
+                        }
+                    } else {
+                        // We have found an app-class in stacktrace before a template-location.
+                        // Must store this so we can tell play that it show this source
+                        errorInAppClassName = appClassName;
+                        errorLine = lineNo;
+                        haveFoundErrorLocation = true;
+                    }
                 }
                 newSElist.add(se);
             }
@@ -106,14 +128,20 @@ public class GTExceptionFixer {
 
         StackTraceElement[] newStackTranceArray = newSElist.toArray(new StackTraceElement[]{});
         
-        return new FixedStackTrace(errorTI, errorLine, newStackTranceArray);
+        return new FixedStackTrace(errorTI, errorInAppClassName, errorLine, newStackTranceArray);
         
     }
 
-    public GTRuntimeException fixException(Throwable e) {
+    public GTException fixException(Throwable e) {
 
-        if ( e instanceof GTRuntimeExceptionForwarder) {
-            e = e.getCause();
+        while ( e instanceof GTRuntimeExceptionForwarder) {
+            Throwable cause = e.getCause();
+            if ( cause != null && cause.getStackTrace().length == 0) {
+                // This is probably a fast-play-exception without stacktrace - eg: play.mvc.results.Redirect
+                // We must use the stackTrace from GTRuntimeExceptionForwarder - need this to show correct template-src-location
+                cause.setStackTrace( e.getStackTrace() );
+            }
+            e = cause;
         }
         
         StackTraceElement[] seList = e.getStackTrace();
@@ -145,7 +173,7 @@ public class GTExceptionFixer {
 
         FixedStackTrace fixedStackTrace = fixStackTrace( seList);
 
-        GTRuntimeException newE = null;
+        GTException newE = null;
         
         if ( e instanceof GTRuntimeExceptionWithSourceInfo) {
             newE = (GTRuntimeExceptionWithSourceInfo)e;
@@ -153,6 +181,10 @@ public class GTExceptionFixer {
             // The top-most error is a template error and we have the source.
             // generate GTRuntimeExceptionWithSourceInfo
             newE = new GTRuntimeExceptionWithSourceInfo(e.getMessage(), e, fixedStackTrace.errorTI.templateLocation, fixedStackTrace.errorLine);
+        } else if ( fixedStackTrace.errorInAppClassName != null) {
+            // The top-most error is inside a play app class.
+            // Must throw special exception with info to tell play to show the source
+            newE = new GTAppClassException(e.getMessage(), e, fixedStackTrace.errorInAppClassName, fixedStackTrace.errorLine);
         } else {
             // The topmost error is not inside a template - wrap it in GTRuntimeException
             newE = new GTRuntimeException(e.getMessage(), e);

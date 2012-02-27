@@ -517,10 +517,17 @@ public class GTPreCompiler {
             // generate the groovy method for retrieving the actual value
 
             methodName = "expression_"+(sc.nextMethodIndex++);
+            sc.gprintln("");
+            sc.gprintln("");
             sc.gprintln("Object " + methodName + "() {", sc.currentLineNo);
+            sc.gprintln(" try{");
 
-            sc.gprintln(" return " + expression + ";");
+            sc.gprintln("  return " + expression + ";");
 
+            sc.gprintln(" }catch(Throwable e){");
+            // So we have a stacktrace even if an Exception (eg: play.mvc.results.Redirect) without stacktrace is thrown
+            sc.gprintln("  throw new play.template2.exceptions.GTRuntimeExceptionForwarder(e);");
+            sc.gprintln(" }");
             sc.gprintln( "}");
 
             expression2GroovyMethodLookup.put(expression, methodName);
@@ -652,9 +659,17 @@ public class GTPreCompiler {
             tagArgString = checkAndPatchActionStringsInTagArguments(tagArgString);
 
             methodName = "args_"+fixStringForCode(tagName, sc) + "_"+(sc.nextMethodIndex++);
+            sc.gprintln("");
+            sc.gprintln("");
             sc.gprintln("Map<String, Object> " + methodName + "() {", srcLine);
+            sc.gprintln(" try{");
 
-            sc.gprintln(" return [" + tagArgString + "];", srcLine);
+            sc.gprintln("  return [" + tagArgString + "];", srcLine);
+
+            sc.gprintln(" }catch(Throwable e){");
+            // So we have a stacktrace even if an Exception (eg: play.mvc.results.Redirect) without stacktrace is thrown
+            sc.gprintln("  throw new play.template2.exceptions.GTRuntimeExceptionForwarder(e);");
+            sc.gprintln(" }");
 
             sc.gprintln("}", srcLine);
 
@@ -877,7 +892,12 @@ public class GTPreCompiler {
                 GTFragmentScript s = (GTFragmentScript)f;
                 // first generate groovy method with script code
                 String groovyMethodName = "custom_script_" + (sc.nextMethodIndex++);
-                sc.gprintln(" void " + groovyMethodName + "(java.io.PrintWriter out){", s.startLine);
+                sc.gprintln("");
+                sc.gprintln("");
+                sc.gprintln("void " + groovyMethodName + "(java.io.PrintWriter out){", s.startLine);
+
+                int tryStartLine = s.startLine;
+                sc.gprintln(" try{");
 
                 int lineNo = s.startLine;
                 //gout.append(sc.pimpStart+"");
@@ -885,7 +905,11 @@ public class GTPreCompiler {
                     sc.gprintln(line, lineNo++);
                 }
 
-                sc.gprintln(" }", lineNo);
+                sc.gprintln(" }catch(Throwable e){", tryStartLine);
+                // So we have a stacktrace even if an Exception (eg: play.mvc.results.Redirect) without stacktrace is thrown
+                sc.gprintln("  throw new play.template2.exceptions.GTRuntimeExceptionForwarder(e);");
+                sc.gprintln(" }");
+                sc.gprintln("}", lineNo);
 
                 // then generate call to that method from java
                 sc.jprintln(" g." + groovyMethodName + "(new PrintWriter(out));", s.startLine);

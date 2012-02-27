@@ -325,7 +325,7 @@ public class GTTemplateRepo {
         return ti;
     }
 
-    public GTRuntimeException fixException(Throwable e) {
+    public GTException fixException(Throwable e) {
         return new GTExceptionFixer(this).fixException(e);
     }
 
