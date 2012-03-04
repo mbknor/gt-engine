@@ -61,7 +61,27 @@ public class SpecialTests {
         assertThat(e.getMessage()).isEqualTo("Cannot find template");
         assertThat(e.templateLocation.relativePath).contains("_generated_key_"); // generated source without filename
 
+    }
 
+    @Test
+    public void testStringsAndTags() throws Exception {
+        GTTemplateRepo tr = new GTTemplateRepoBuilder()
+                .withTemplateRootFolder( new File("src/test/resources/template_root/"))
+                .build();
+
+        TemplateSourceRenderer sr = new TemplateSourceRenderer(tr);
+
+        Map<String, Object> args = new HashMap<String, Object>();
+
+        assertThat(sr.renderSrc("a#{simpleTag '}'/}b", args)).isEqualTo("a[from tag: }]b");
+        assertThat(sr.renderSrc("a#{simpleTag '\\'}'/}b", args)).isEqualTo("a[from tag: '}]b");
+        assertThat(sr.renderSrc("a#{simpleTag '/}'/}b", args)).isEqualTo("a[from tag: /}]b");
+        assertThat(sr.renderSrc("a#{simpleTag '#{'/}b", args)).isEqualTo("a[from tag: #{]b");
+
+        assertThat(sr.renderSrc("a#{simpleTag \"}\"/}b", args)).isEqualTo("a[from tag: }]b");
+        assertThat(sr.renderSrc("a#{simpleTag \"\\\"}\"/}b", args)).isEqualTo("a[from tag: \"}]b");
+        assertThat(sr.renderSrc("a#{simpleTag \"/}\"/}b", args)).isEqualTo("a[from tag: /}]b");
+        assertThat(sr.renderSrc("a#{simpleTag \"#{\"/}b", args)).isEqualTo("a[from tag: #{]b");
 
     }
 }

@@ -239,15 +239,62 @@ public class GTPreCompiler {
     final static Pattern partsP = Pattern.compile("([#\\$&]|@?@)\\{|(\\*\\{)|(%\\{)");
 
     // pattern that finds all kinds of tags
-    final static Pattern tagP = Pattern.compile("#\\{([^\\}]+)\\}");
     final Pattern tagBodyP = Pattern.compile("([^\\s]+)(?:\\s*$|\\s+(.+))");
 
     final static Pattern endCommentP = Pattern.compile("\\}\\*");
     final static Pattern endScriptP = Pattern.compile("\\}%");
-    final static Pattern endTagExpressionEtcP = Pattern.compile("\\}");
 
-    // pattern that finds a $/@/@@ (value) with content/expression
-    final static Pattern valueP = Pattern.compile("(?:\\$|@?@|&)\\{([^\\}]+)\\}");
+    final static Pattern findEndBracketOrStringStart = Pattern.compile("(\\}|'|\")");
+    /**
+     * Finds the next '}', which is not inside a string, on the current line.
+     * If not found, -1 is returned
+     * @param line the line to look in
+     * @param offset where to start
+     * @return pos of the found '}' or -1 if not found
+     */
+    protected int findEndBracket(String line, int offset, SourceContext sc, int lineNo) {
+        // Find the next }, or a starting string: ' or "
+        Matcher m = findEndBracketOrStringStart.matcher(line);
+        
+        while ( offset < line.length()) {
+        
+            if ( !m.find(offset)) {
+                // did not find anything
+                return -1;
+            }
+            String what = m.group(1);
+            
+            if ( "}".equals(what)) {
+                // found it
+                return m.start(1);
+            }
+            // We have found a starting string
+            String stringType = what;
+
+            // Must find the end of this string
+            offset = m.end(1);
+            while ( true ) {
+
+                offset = line.indexOf(what, offset);
+                if ( offset < 0) {
+                    throw new GTCompilationExceptionWithSourceInfo("Found unclosed string inside tag-definition", sc.templateLocation, lineNo);
+                }
+                // check if this ' or " is escaped
+                if ( line.charAt(offset-1) != '\\') {
+                    // It was not escaped - this is the end of the string
+                    offset++;
+                    break;
+                }
+                // Was escaped - continue looking for end of string
+                offset++;
+                if ( offset >= line.length()) {
+                    throw new GTCompilationExceptionWithSourceInfo("Found unclosed string inside tag-definition", sc.templateLocation, lineNo);
+                }
+            }
+        }
+
+        return -1;
+    }
 
     protected GTFragment processNextFragment( SourceContext sc) {
         // find next something..
@@ -312,39 +359,34 @@ public class GTPreCompiler {
                 }
             } else if (insideTagExpressionEtc) {
                 // can only look for end-tag/expression.. '}'
-                Matcher m = endTagExpressionEtcP.matcher(currentLine);
-                if (m.find(sc.lineOffset)) {
+                int endPos = findEndBracket(currentLine, sc.lineOffset, sc, tagExpressionEtcStartLine);
+                if (endPos >= 0) {
                     // found the end of it.
                     insideTagExpressionEtc = false;
                     // extract it as a single String
 
                     // Use plainText-finder to extract our script
-                    String tagString = checkForPlainText(sc, tagExpressionEtcStartLine, tagExpressionEtcStartOffset, m.start())+"}";
+                    String tagBody = checkForPlainText(sc, tagExpressionEtcStartLine, tagExpressionEtcStartOffset, endPos);
 
-                    sc.lineOffset = m.end();
+                    sc.lineOffset = endPos+1;
 
-                    if( tagString == null ) {
+                    if( tagBody == null ) {
                         throw new GTCompilationExceptionWithSourceInfo("Found empty inside tag/expression/etc..", sc.templateLocation, tagExpressionEtcStartLine);
                     }
 
-                    // now we are ready to process the found tag/expression etc..
+                    // remove the leading #{ or ${ or @{ etc
+                    tagBody = tagBody.substring(2);
 
                     // strip it for new lines..
-                    tagString = tagString.replaceAll("\\r?\\n", " ");
+                    tagBody = tagBody.replaceAll("\\r?\\n", " ");
+
+                    // now we are ready to process the found tag/expression etc..
 
                     // we know we have found the start of a tag/expression etc.
-                    //
 
                     if ("#".equals(tagExpressionEtcTypeFound)) {
                         // we found a tag - go' get it
 
-                        m = tagP.matcher( tagString );
-
-                        if (!m.find()) {
-                            throw new GTCompilationException("Where supposed to find the #tag here.. "+sc);
-                        }
-
-                        String tagBody = m.group(1);
                         boolean endedTag = tagBody.startsWith("/");
                         if ( endedTag) {
                             tagBody = tagBody.substring(1);
@@ -355,9 +397,7 @@ public class GTPreCompiler {
                         }
                         // split tag name and optional params
 
-
-
-                        m = tagBodyP.matcher(tagBody);
+                        Matcher m = tagBodyP.matcher(tagBody);
                         if (!m.find()) {
                             throw new GTCompilationExceptionWithSourceInfo("closing tag has no tag-name", sc.templateLocation, tagExpressionEtcStartLine);
                         }
@@ -374,33 +414,25 @@ public class GTPreCompiler {
                         return processTag(sc, tagName, tagArgString, tagWithoutBody);
 
                     } else if ("$".equals(tagExpressionEtcTypeFound)) {
-                        m = valueP.matcher(tagString);
-                        if (!m.find()) {
-                            throw new GTCompilationException("Where supposed to find the $value here..");
-                        }
 
-                        String expression = m.group(1).trim();
+                        String expression = tagBody;
 
                         return generateExpressionPrinter(expression, sc, tagExpressionEtcStartLine);
 
                     } else if ("@".equals(tagExpressionEtcTypeFound) || "@@".equals(tagExpressionEtcTypeFound)) {
-                        m = valueP.matcher(tagString);
-                        if (!m.find()) {
-                            throw new GTCompilationException("Where supposed to find the @value here..");
-                        }
 
-                        String action = m.group(1).trim();
+
 
                         boolean absolute = "@@".equals(tagExpressionEtcTypeFound);
+                        if (absolute) {
+                            // must remove one more char from tagBody
+                            tagBody = tagBody.substring(1);
+                        }
+                        String action = tagBody;
                         return generateRegularActionPrinter(absolute, action, sc, tagExpressionEtcStartLine);
 
                     } else if ("&".equals(tagExpressionEtcTypeFound)) {
-                        m = valueP.matcher(tagString);
-                        if (!m.find()) {
-                            throw new GTCompilationException("Where supposed to find the &value here..");
-                        }
-
-                        String messageArgs = m.group(1).trim();
+                        String messageArgs = tagBody;
 
 
                         return generateMessagePrinter(tagExpressionEtcStartLine, messageArgs, sc);
