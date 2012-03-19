@@ -76,6 +76,15 @@ public class JavaExtensionTest {
         args.put("foo2", foo2);
         assertThat(sr.renderSrc("${foo.fooConcat(foo2)}", args)).isEqualTo("Foo2: xy");
 
+    }
+
+    @Test
+    public void testStaticNameClashProblem() throws Exception {
+        TemplateSourceRenderer sr = createSourceRenderer();
+
+        Map<String, Object> args = new HashMap<String, Object>();
+        args.put("a", "ab&c");
+        assertThat(sr.renderSrc("${org.apache.commons.lang.StringEscapeUtils.escapeHtml(a)}", args)).isEqualTo("ab&amp;c");
 
     }
 
@@ -115,5 +124,9 @@ class SimpleJavaExtensions {
     
     public static String fooConcat(JavaExtensionTest.Foo1 foo, JavaExtensionTest.Foo1 other) {
         return foo.inner + other.inner;
+    }
+    
+    public static String escapeHtml(String s) {
+        return "JE.escapeHtml:"+s;
     }
 }
