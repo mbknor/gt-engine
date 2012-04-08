@@ -338,6 +338,15 @@ public abstract class GTJavaBase extends GTRenderingResult {
             }.iterator();
         }
 
+        if ( o instanceof Class && ((Class<?>)o).isEnum()) {
+            return new Iterable() {
+                public Iterator iterator() {
+                    return new ArrayIterator(((Class<?>) o).getEnumConstants());
+                }
+            }.iterator();
+
+        }
+
         throw new GTTemplateRuntimeException("Cannot convert object-reference to Iterator");
     }
 
