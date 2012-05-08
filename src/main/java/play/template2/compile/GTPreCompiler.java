@@ -40,6 +40,7 @@ public class GTPreCompiler {
         public int currentLineNo;
         public int lineOffset;
         public int nextMethodIndex = 0;
+        public int curlyBracketLevel = 0; // Used to keep track of {} usage inside tags
 
         public SourceContext(GTTemplateLocation templateLocation) {
             this.templateLocation = templateLocation;
@@ -244,7 +245,7 @@ public class GTPreCompiler {
     final static Pattern endCommentP = Pattern.compile("\\}\\*");
     final static Pattern endScriptP = Pattern.compile("\\}%");
 
-    final static Pattern findEndBracketOrStringStart = Pattern.compile("(\\}|'|\")");
+    final static Pattern findEndBracketOrStringStart = Pattern.compile("(\\}|'|\"|\\{)");
     /**
      * Finds the next '}', which is not inside a string, on the current line.
      * If not found, -1 is returned
@@ -255,7 +256,9 @@ public class GTPreCompiler {
     protected int findEndBracket(String line, int offset, SourceContext sc, int lineNo) {
         // Find the next }, or a starting string: ' or "
         Matcher m = findEndBracketOrStringStart.matcher(line);
-        
+        // We must NOT init sc.curlyBracketLevel to 0 since we might use multiple calls to this method to find one complete
+        // tag - using multiple lines. If the usage of {} inside tags are not proper closed, we will fail
+        // with un-terminated-tag anyway..
         while ( offset < line.length()) {
         
             if ( !m.find(offset)) {
@@ -265,8 +268,22 @@ public class GTPreCompiler {
             String what = m.group(1);
             
             if ( "}".equals(what)) {
-                // found it
-                return m.start(1);
+                // Found a }, is this the one ending the tag?
+                if ( sc.curlyBracketLevel == 0) {
+                    // found it
+                    return m.start(1);
+                }
+                // found a } which terminated a { inside the tag/expr
+                sc.curlyBracketLevel--;
+                offset = m.end(1);
+                continue;
+            } else if ( "{".equals(what)) {
+                // Found a new { inside the tag/expr definition.
+                // Must increment sc.curlyBracketLevel so we find the ending )
+                // before leaving the tag def.
+                sc.curlyBracketLevel++;
+                offset = m.end(1);
+                continue;
             }
             // We have found a starting string
             String stringType = what;

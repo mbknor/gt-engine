@@ -81,4 +81,21 @@ public class GTPreCompilerTest {
         
     }
 
+    @Test
+    public void testBracketsInsideExpr() throws Exception {
+
+        TemplateSourceRenderer r = new TemplateSourceRenderer( new GTTemplateRepoBuilder().build());
+
+        Map<String, Object> args = new HashMap<String, Object>();
+        args.put("myData", "123");
+
+        assertThat(r.renderSrc("a${myData.each{x -> x}}b", args)).isEqualTo("a123b");
+        assertThat(r.renderSrc("a${myData.each\n{x -> x}}b", args)).isEqualTo("a123b");
+        assertThat(r.renderSrc("a${myData.each\n{x -> x}\n}b", args)).isEqualTo("a123b");
+
+
+
+    }
+
+
 }
