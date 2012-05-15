@@ -1,6 +1,0 @@
-* template include/extend/render using only key and template from source without file
-* port the rest of the old fasttags? into custom fasttag..
-
-* Make greenscript work:
-    * remove the need of Not-using-def?
-    * stop using StringBuilder and user Writer instead - and always include out as arg.
