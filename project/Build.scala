@@ -33,7 +33,7 @@ object GTEngineBuild extends Build {
         	"commons-collections" % "commons-collections" % "3.2.1",
         	"commons-lang" % "commons-lang" % "2.6",
         	"org.easytesting" % "fest-assert" % "1.4" % "test",
-        	"com.novocode" % "junit-interface" % "0.7" % "test"
+        	"junit" % "junit" % "4.8.2" % "test"
       )
   }
 
@@ -41,15 +41,19 @@ object GTEngineBuild extends Build {
 
   object BuildSettings {
 
-          val buildOrganization = "kjetland"
+          val buildOrganization = "com.kjetland"
           val buildVersion      = "0.2.1"
           val buildScalaVersion = "2.9.1"
           val buildSbtVersion   = "0.11.2"
 
           val buildSettings = Defaults.defaultSettings ++ Seq (
+              artifactName   := {(config: String, module: ModuleID, artifact: Artifact) => {
+                  module.name + "-" + module.revision + "." + artifact.extension
+              }}, 
               organization   := buildOrganization,
               version        := buildVersion,
               scalaVersion   := buildScalaVersion,
+              autoScalaLibrary := false,
               // Must ignore generating scaladoc since it gives an error
               // where I, with intention, left out specifying the generic type when extending Closure in GTContentRendererFakeClosure.
               publishArtifact in packageDoc := false
