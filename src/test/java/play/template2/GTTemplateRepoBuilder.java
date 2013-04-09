@@ -13,9 +13,15 @@ public class GTTemplateRepoBuilder {
     public File templateRootFolder = null;
     public boolean fakeWindowsNewLines = false;
     public GTJavaExtensionMethodResolver gtJavaExtensionMethodResolver = null;
+    public GTPreCompilerFactory preCompilerFactory = new GTPreCompilerFactoryImpl();
     
     public GTTemplateRepoBuilder withTemplateRootFolder( File folder) {
         this.templateRootFolder = folder;
+        return this;
+    }
+
+    public GTTemplateRepoBuilder withPreCompilerFactory(GTPreCompilerFactory preCompilerFactory) {
+        this.preCompilerFactory = preCompilerFactory;
         return this;
     }
 
@@ -29,9 +35,9 @@ public class GTTemplateRepoBuilder {
         return this;
     }
 
-    private static class GTPreCompilerFactoryImpl implements GTPreCompilerFactory {
+    public static class GTPreCompilerFactoryImpl implements GTPreCompilerFactory {
 
-        public GTTemplateRepo templateRepo;
+        //public GTTemplateRepo templateRepo;
 
         public GTPreCompiler createCompiler(GTTemplateRepo templateRepo) {
             return new GTPreCompiler(templateRepo) {
@@ -45,7 +51,7 @@ public class GTTemplateRepoBuilder {
     }
 
 
-    private GTTemplateRepo createTemplateRepo() {
+    private GTTemplateRepo createTemplateRepo(final GTPreCompilerFactory preCompilerFactory) {
 
         GTJavaCompileToClass.typeResolver = new GTTypeResolver() {
             public byte[] getTypeBytes(String name) {
@@ -76,9 +82,7 @@ public class GTTemplateRepoBuilder {
             }
         };
 
-        final GTPreCompilerFactoryImpl preCompilerFactory = new GTPreCompilerFactoryImpl();
         final GTTemplateRepo templateRepo = new GTTemplateRepo(getClass().getClassLoader(), false, preCompilerFactory, false, null);
-        preCompilerFactory.templateRepo = templateRepo;
         return templateRepo;
     }
 
@@ -153,6 +157,6 @@ public class GTTemplateRepoBuilder {
             };
         }
         
-        return createTemplateRepo();
+        return createTemplateRepo(preCompilerFactory);
     }
 }

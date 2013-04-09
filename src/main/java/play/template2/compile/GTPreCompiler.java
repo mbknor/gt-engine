@@ -547,7 +547,7 @@ public class GTPreCompiler {
         throw new GTCompilationException("actions not supported - override to implement it");
     }
 
-    private GTFragmentCode generateExpressionPrinter(String expression, SourceContext sc, int lineNo) {
+    protected GTFragmentCode generateExpressionPrinter(String expression, SourceContext sc, int lineNo) {
         String methodName = generateGroovyExpressionResolver(expression, sc);
 
         // return the java-code for retrieving and printing the expression
