@@ -360,7 +360,7 @@ public abstract class GTJavaExtensionsInvoker {
 
             if (invokerExecutor != null) {
                 invocationInfoMap.putIfAbsent(invocationSignatur, new InvocationInfo(m, methodName, invokerExecutor, invoker));
-                Object res = invokerExecutor.doIt(m, methodName, object, (invoker!=null ? invoker.fixArgs(object, args) : null));
+                Object res = invokerExecutor.doIt(m, methodName, object, (invoker!=null ? invoker.fixArgs(object, args) : args));
                 return res;
             } else {
                 throw new NoSuchMethodException(methodName);

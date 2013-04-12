@@ -1,8 +1,10 @@
 package play.template2;
 
+import groovy.lang.GroovyObjectSupport;
 import org.junit.Test;
 import play.template2.compile.GTJavaExtensionMethodResolver;
 
+import java.io.File;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -14,11 +16,12 @@ public class JavaExtensionTest {
 
     private TemplateSourceRenderer createSourceRenderer() {
         TemplateSourceRenderer sr = new TemplateSourceRenderer( new GTTemplateRepoBuilder()
-                .withGTJavaExtensionMethodResolver( new GTJavaExtensionMethodResolver() {
+                .withTemplateRootFolder( new File("src/test/resources/template_root/"))
+                .withGTJavaExtensionMethodResolver(new GTJavaExtensionMethodResolver() {
                     @Override
                     public Class findClassWithMethod(String methodName) {
-                        for ( Method m : SimpleJavaExtensions.class.getDeclaredMethods()) {
-                            if ( m.getName().equals(methodName)) {
+                        for (Method m : SimpleJavaExtensions.class.getDeclaredMethods()) {
+                            if (m.getName().equals(methodName)) {
                                 return SimpleJavaExtensions.class;
                             }
                         }
@@ -103,8 +106,15 @@ public class JavaExtensionTest {
         }
     }
 
+    @Test
+    public void testStrangeFirstTimeGroovyObjectUsageParamsIssue() throws Exception {
+        TemplateSourceRenderer sr = createSourceRenderer();
+        Map<String, Object> args = new HashMap<String, Object>();
+        args.put("id",1);
+        args.put("o", new MyGroovyObject());
+        assertThat(sr.renderSrc("${o.methodNameThatCanCollideWithGroovyObjectSupport(id)}", args)).isEqualTo("method:methodNameThatCanCollideWithGroovyObjectSupport-arg:1");
 
-
+    }
 }
 
 
@@ -128,5 +138,23 @@ class SimpleJavaExtensions {
     
     public static String escapeHtml(String s) {
         return "JE.escapeHtml:"+s;
+    }
+
+    public static String methodNameThatCanCollideWithGroovyObjectSupport() {
+        return "";
+    }
+}
+
+class MyGroovyObject extends GroovyObjectSupport {
+
+    @Override
+    public Object invokeMethod(String name, Object args) {
+        Object[] a = (Object[])args;
+        return "method:"+name+"-arg:"+a[0];
+    }
+
+    @Override
+    public Object getProperty(String property) {
+        return new MyGroovyObject();
     }
 }
