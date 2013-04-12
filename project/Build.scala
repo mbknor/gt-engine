@@ -21,7 +21,7 @@ object GTEngineBuild extends Build {
 
 
   object Resolvers {
-    val mbknorRepository = Resolver.ssh("my local mbknor repo", "localhost", "~/projects/mbknor.github.com/m2repo/releases/")(Resolver.mavenStylePatterns)
+    val mbknorRepository = Resolver.ssh("my local mbknor repo", "localhost", "~/projects/mbknor/mbknor.github.com/m2repo/releases/")(Resolver.mavenStylePatterns)
     val mbknorGithubRepo = "mbknor github Repository" at mbknorGithubRepoUrl
   }
 
@@ -42,7 +42,7 @@ object GTEngineBuild extends Build {
   object BuildSettings {
 
           val buildOrganization = "com.kjetland"
-          val buildVersion      = "0.2.3-SNAPSHOT"
+          val buildVersion      = "0.2.3"
           val buildScalaVersion = "2.9.1"
           val buildSbtVersion   = "0.11.2"
 
