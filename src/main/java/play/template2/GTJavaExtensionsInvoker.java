@@ -325,7 +325,7 @@ public abstract class GTJavaExtensionsInvoker {
 
             if ( invocationInfo != null ) {
                 Invoker invoker = invocationInfo.invoker;
-                return invocationInfo.invokeExecutor.doIt(invocationInfo.method, invocationInfo.methodName, object, (invoker!=null ? invoker.fixArgs(object, args) : null));
+                return invocationInfo.invokeExecutor.doIt(invocationInfo.method, invocationInfo.methodName, object, (invoker!=null ? invoker.fixArgs(object, args) : args));
             }
 
 

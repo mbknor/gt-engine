@@ -112,7 +112,13 @@ public class JavaExtensionTest {
         Map<String, Object> args = new HashMap<String, Object>();
         args.put("id",1);
         args.put("o", new MyGroovyObject());
+        // Do it one time
         assertThat(sr.renderSrc("${o.methodNameThatCanCollideWithGroovyObjectSupport(id)}", args)).isEqualTo("method:methodNameThatCanCollideWithGroovyObjectSupport-arg:1");
+        // Do it again
+        assertThat(sr.renderSrc("${o.methodNameThatCanCollideWithGroovyObjectSupport(id)}", args)).isEqualTo("method:methodNameThatCanCollideWithGroovyObjectSupport-arg:1");
+        // Do it twice in the same template
+        assertThat(sr.renderSrc("${o.methodNameThatCanCollideWithGroovyObjectSupport(id)} - ${o.methodNameThatCanCollideWithGroovyObjectSupport(id)}", args))
+                .isEqualTo("method:methodNameThatCanCollideWithGroovyObjectSupport-arg:1 - method:methodNameThatCanCollideWithGroovyObjectSupport-arg:1");
 
     }
 }
