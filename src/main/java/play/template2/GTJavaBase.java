@@ -96,9 +96,14 @@ public abstract class GTJavaBase extends GTRenderingResult {
 
         internalRenderTemplate(args, true, null);
     }
-    
 
     public void internalRenderTemplate(Map<String, Object> args, boolean startingNewRendering, GTJavaBase callingTemplate) throws GTTemplateNotFoundWithSourceInfo, GTRuntimeException{
+        internalRenderTemplate(args, null, startingNewRendering, callingTemplate);
+    }
+
+    // args passed in orgArgs are passed along to include, extend, and tags
+    // tagArgs are not passed along
+    public void internalRenderTemplate(Map<String, Object> orgArgs, Map<String, Object> tagArgs, boolean startingNewRendering, GTJavaBase callingTemplate) throws GTTemplateNotFoundWithSourceInfo, GTRuntimeException{
 
         if ( startingNewRendering ) {
             // start with fresh tag-stack
@@ -108,8 +113,14 @@ public abstract class GTJavaBase extends GTRenderingResult {
         try {
 
             // must store a copy of args, so we can pass the same (unchnaged) args to an extending template.
-            this.orgArgs = new HashMap<String, Object>(args);
-            this.binding = new Binding( new HashMap<String, Object>(args)); // Must create a new map to prevent script-generated variables to leak out
+            this.orgArgs = new HashMap<String, Object>(orgArgs);
+            // Must create a new map to prevent script-generated variables to leak out
+            final HashMap<String, Object> bindingsMap = new HashMap<String, Object>(orgArgs);
+            if( tagArgs != null ) {
+                // make them available at scope, but not in orgArgs so they do not get passed along..
+                bindingsMap.putAll(tagArgs);
+            }
+            this.binding = new Binding(bindingsMap);
             this.binding.setProperty("java_class", this);
             // must init our groovy script
 
@@ -136,7 +147,7 @@ public abstract class GTJavaBase extends GTRenderingResult {
                     extendedTemplate.extendingTemplate = this;
     
                     // ok, render it with original args..
-                    extendedTemplate.internalRenderTemplate( orgArgs, false, null );
+                    extendedTemplate.internalRenderTemplate(this.orgArgs, false, null );
                 } else {
                     // Extends have been specified somewhere when rendering this template/tag.
                     // Must pass the extends-info up the chain
@@ -228,7 +239,7 @@ public abstract class GTJavaBase extends GTRenderingResult {
         tagTemplate.contentRenderer = contentRenderer;
         // render the tag
         // input should be all org args
-        Map<String, Object> completeTagArgs = new HashMap<String, Object>( orgArgs );
+        Map<String, Object> completeTagArgs = new HashMap<String, Object>( );
 
         // and all scoped variables under _caller
         completeTagArgs.put("_caller", this.binding.getVariables());
@@ -249,7 +260,7 @@ public abstract class GTJavaBase extends GTRenderingResult {
         // Must also add all tag-args (the map) with original names as a new value named '_attrs'
         completeTagArgs.put("_attrs", tagArgs);
 
-        tagTemplate.internalRenderTemplate(completeTagArgs, false, this);
+        tagTemplate.internalRenderTemplate(orgArgs, completeTagArgs, false, this);
         //grab the output
         insertOutput( tagTemplate );
     }
