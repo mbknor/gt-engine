@@ -221,6 +221,8 @@ public abstract class GTJavaBase extends GTRenderingResult {
                 return ((Number) test).intValue() != 0;
             } else if (test instanceof Collection) {
                 return !((Collection) test).isEmpty();
+            } else if (test instanceof Map) {
+                return !((Map) test).isEmpty();
             } else {
                 return true;
             }
