@@ -21,9 +21,9 @@ public class SpecialTests {
 
         Map<String, Object> args = new HashMap<String, Object>();
 
-        assertThat(sr.renderSrc("A#{printBodyInVerbatim}BC#{/printBodyInVerbatim}C", args)).isEqualTo("A\n[from tag. body: BC]\nC");
-        assertThat(sr.renderSrc("#{include 'simpleTemplate.txt'/}-A#{printBodyInVerbatim}BC#{/printBodyInVerbatim}C", args)).isEqualTo("[from simpleTemplate]-A\n[from tag. body: BC]\nC");
-        assertThat(sr.renderSrc("A#{printBodyInVerbatim}BC\n#{include 'simpleTemplate.txt'/}#{/printBodyInVerbatim}C", args)).isEqualTo("A\n[from tag. body: BC\n[from simpleTemplate]]\nC");
+        assertThat(sr.renderSrc("A#{printBodyInVerbatim}BC#{/printBodyInVerbatim}C", args)).isEqualTo("A" + System.getProperty("line.separator") + "[from tag. body: BC]" + System.getProperty("line.separator") + "C");
+        assertThat(sr.renderSrc("#{include 'simpleTemplate.txt'/}-A#{printBodyInVerbatim}BC#{/printBodyInVerbatim}C", args)).isEqualTo("[from simpleTemplate]-A" + System.getProperty("line.separator") + "[from tag. body: BC]" + System.getProperty("line.separator") + "C");
+        assertThat(sr.renderSrc("A#{printBodyInVerbatim}BC\n#{include 'simpleTemplate.txt'/}#{/printBodyInVerbatim}C", args)).isEqualTo("A" + System.getProperty("line.separator") + "[from tag. body: BC\n[from simpleTemplate]]" + System.getProperty("line.separator") + "C");
 
     }
     
