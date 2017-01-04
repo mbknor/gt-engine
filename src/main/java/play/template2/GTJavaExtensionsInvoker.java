@@ -43,7 +43,7 @@ public abstract class GTJavaExtensionsInvoker {
     static interface WrappedMethod {
         public Object invoke(Object o, Object[] args) throws Exception;
     }
-    
+
     static class WrappedJavaMethod implements WrappedMethod {
         private final Method m;
 
@@ -53,7 +53,13 @@ public abstract class GTJavaExtensionsInvoker {
 
         @Override
         public Object invoke(Object o, Object[] args) throws Exception {
-            return m.invoke(o, args);
+            try {
+                return m.invoke(o, args);
+            } catch (InvocationTargetException wrapped) {
+                Throwable e = wrapped.getTargetException();
+                if (e instanceof Error) throw (Error) e;
+                throw (Exception) e;
+            }
         }
     }
 
