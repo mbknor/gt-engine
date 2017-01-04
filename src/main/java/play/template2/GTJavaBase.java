@@ -11,6 +11,8 @@ import play.template2.legacy.GTContentRendererFakeClosure;
 
 import java.io.OutputStream;
 import java.io.StringWriter;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.*;
 
 
@@ -216,9 +218,13 @@ public abstract class GTJavaBase extends GTRenderingResult {
             if (test instanceof Boolean) {
                 return ((Boolean) test).booleanValue();
             } else if (test instanceof String) {
-                return ((String) test).length() > 0;
+                return !((String) test).isEmpty();
+            } else if (test instanceof BigInteger) {
+                return ((BigInteger) test).compareTo(BigInteger.ZERO) != 0;
+            } else if (test instanceof BigDecimal) {
+                return ((BigDecimal) test).compareTo(BigDecimal.ZERO) != 0;
             } else if (test instanceof Number) {
-                return ((Number) test).intValue() != 0;
+                return ((Number) test).doubleValue() != 0.0;
             } else if (test instanceof Collection) {
                 return !((Collection) test).isEmpty();
             } else if (test instanceof Map) {
