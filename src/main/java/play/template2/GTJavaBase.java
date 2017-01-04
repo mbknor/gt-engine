@@ -147,7 +147,7 @@ public abstract class GTJavaBase extends GTRenderingResult {
                     extendedTemplate.extendingTemplate = this;
     
                     // ok, render it with original args..
-                    extendedTemplate.internalRenderTemplate(this.orgArgs, false, null );
+                    extendedTemplate.internalRenderTemplate(bindingsMap, false, null );
                 } else {
                     // Extends have been specified somewhere when rendering this template/tag.
                     // Must pass the extends-info up the chain
